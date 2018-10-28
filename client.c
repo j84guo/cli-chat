@@ -76,6 +76,12 @@ void stop_thread(pthread_t tid)
     pthread_join(tid, NULL);
 }
 
+/**
+ * Todo:
+ * - clean up functions
+ * - lock queue access
+ * - chat protocol
+ */
 int main(int argc, char **argv)
 {
     if (argc != 3) {
