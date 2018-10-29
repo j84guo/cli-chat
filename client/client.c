@@ -42,7 +42,7 @@ int stdin_loop(elpinfo_t *info)
             break;
         }
 
-        elp_give_msg(info, input);
+        elp_msg_out(info, input);
     }
 
     return 0;
@@ -66,8 +66,8 @@ int main(int argc, char **argv)
     pthread_t elptid;
     pthread_create(&elptid, NULL, elp_run, &info);
 
-    int ret = stdin_loop(&info);   
- 
+    int ret = stdin_loop(&info);
+
     printf("Shutting down\n");
     stop_thread(elptid);
     elpinfo_dtry(&info);

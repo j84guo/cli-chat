@@ -43,6 +43,9 @@ int elpinfo_dtry(elpinfo_t *info)
     if (close(info->pipefd[1]))
         ret = -1;
 
+    if (pthread_mutex_destroy(&info->mutex))
+        ret = -1;
+
     return ret;
 }
 
@@ -58,47 +61,81 @@ int fdset_init(fd_set *set, int pd, int sd)
     return 0;
 }
 
+void elp_msg_send(elpinfo_t *info)
+{
+    char c, *msg;
+    read(info->pipefd[0], &c, 1);
+
+    pthread_mutex_lock(&info->mutex);
+    msg = llist_remf(&info->queue);
+    pthread_mutex_unlock(&info->mutex);
+
+    sendall(info->con.fd, msg, strlen(msg));
+    free(msg);
+}
+
+int elp_select(fd_set *set, int pd, int sd)
+{
+    if(fdset_init(set, pd, sd))
+        return -1;
+     
+    return select(
+        pd >= sd ? pd + 1 : sd + 1, 
+        set, 
+        NULL, 
+        NULL, 
+        NULL
+    );
+}
+
+/**
+ * Returns -1 to indicate recv error, 0 for server disconnect, 1 for success.
+ * This error code convention is different from the other functions (0 on
+ * success, -1 on failure) so maybe this code should be changed later...
+ */
+int elp_msg_recv(int sd)
+{
+    char rbuf[512 + 1];
+    int ret = recv(sd, rbuf, 512, 0);
+
+    if (ret == -1) {
+        perror("recv");
+        return -1;
+    } else if (!ret) {
+        printf("Server disconected\n");
+        return 0;
+    }
+
+    rbuf[ret] = '\0';
+    printf("%s", rbuf);
+    return 1;
+}
+
 int elp_loop(elpinfo_t *info)
 {
-    int ret, nfds, pd=info->pipefd[0], sd=info->con.fd;
-    char rbuf[512 + 1], *msg;
+    int ret, pd=info->pipefd[0], sd=info->con.fd;
     fd_set set;
 
     while (1) {
-        fdset_init(&set, pd, sd);
-        nfds = pd >= sd ? pd + 1 : sd + 1;
-        ret = select(nfds, &set, NULL, NULL, NULL);
-
+        ret = elp_select(&set, pd, sd);   
+    
         if (ret == -1) {
             if (errno == EINTR)
                 continue;
 
-            perror("select");
+            perror("elp_select");
             return -1;
         }
 
         if (FD_ISSET(pd, &set)) {
-            read(pd, rbuf, 1);
-
-            pthread_mutex_lock(&info->mutex);
-            msg = llist_remf(&info->queue);
-            pthread_mutex_unlock(&info->mutex);
-
-            sendall(sd, msg, strlen(msg));
-            free(msg);
+            elp_msg_send(info);
         } else {
-            ret = recv(sd, rbuf, 512, 0);
+            ret = elp_msg_recv(sd);
 
-            if (ret == -1) {
-                perror("recv");
-                return -1;
-            } else if (!ret) {
-                printf("Server disconected\n");
-                return 0;
-            }
-
-            rbuf[ret] = '\0';
-            printf("%s", rbuf);
+            if (ret == -1)
+                return ret;
+            else if (!ret)
+                break;
         }
     }
 
@@ -112,7 +149,7 @@ void *elp_run(void *arg)
     return NULL;
 }
 
-int elp_give_msg(elpinfo_t *info, char *input)
+int elp_msg_out(elpinfo_t *info, char *input)
 {
     if (!info || !input)
         return -1;
