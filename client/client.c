@@ -13,13 +13,14 @@ typedef struct {
     int pipefd[2];
     tcpcon_t con;
     llist_t queue;
+    pthread_mutex_t mutex;
 } elpinfo_t;
 
 int elpinfo_init(elpinfo_t *info, char *ip, unsigned short port);
 int elpinfo_destroy(elpinfo_t *info);
 void *elp_run(void *arg);
-int elp_loop(int pd, tcpcon_t *con, llist_t *queue);
-int elp_msg(elpinfo_t *info, char *input);
+int elp_loop(elpinfo_t *info);
+int elp_give_msg(elpinfo_t *info, char *input);
 void stop_thread(pthread_t tid);
 int arg_check(int argc, char **argv);
 int fdset_init(fd_set *set, int pd, int sd);
@@ -38,6 +39,8 @@ int elpinfo_init(elpinfo_t *info, char *ip, unsigned short port)
 
     if (tcpcon_init(&info->con, ip, port))
         return -1;
+
+    pthread_mutex_init(&info->mutex, NULL);
 
     return 0;
 }
@@ -67,16 +70,16 @@ int fdset_init(fd_set *set, int pd, int sd)
     return 0;
 }
 
-int elp_loop(int pd, tcpcon_t *con, llist_t *queue)
+int elp_loop(elpinfo_t *info)
 {
-    int ret, nfds;
+    int ret, nfds, pd=info->pipefd[0], sd=info->con.fd;
     char rbuf[512 + 1], *msg;
-    fd_set readfds;
+    fd_set set;
 
     while (1) {
-        fdset_init(&readfds, pd, con->fd);
-        nfds = pd >= con->fd ? pd + 1 : con->fd + 1;
-        ret = select(nfds, &readfds, NULL, NULL, NULL);
+        fdset_init(&set, pd, sd);
+        nfds = pd >= sd ? pd + 1 : sd + 1;
+        ret = select(nfds, &set, NULL, NULL, NULL);
 
         if (ret == -1) {
             if (errno == EINTR)
@@ -86,14 +89,17 @@ int elp_loop(int pd, tcpcon_t *con, llist_t *queue)
             return -1;
         }
 
-        if (FD_ISSET(pd, &readfds)) {
+        if (FD_ISSET(pd, &set)) {
             read(pd, rbuf, 1);
 
-            msg = llist_remf(queue);
-            sendall(con->fd, msg, strlen(msg));
+            pthread_mutex_lock(&info->mutex);
+            msg = llist_remf(&info->queue);
+            pthread_mutex_unlock(&info->mutex);
+
+            sendall(sd, msg, strlen(msg));
             free(msg);
         } else {
-            ret = recv(con->fd, rbuf, 512, 0);
+            ret = recv(sd, rbuf, 512, 0);
 
             if (ret == -1) {
                 perror("recv");
@@ -106,16 +112,15 @@ int elp_loop(int pd, tcpcon_t *con, llist_t *queue)
             rbuf[ret] = '\0';
             printf("%s", rbuf);
         }
-
     }
-
+ 
     return 0;
 }
 
 void *elp_run(void *arg)
 {
     elpinfo_t *info = (elpinfo_t *) arg;
-    elp_loop(info->pipefd[0], &info->con, &info->queue);
+    elp_loop(info);
     return NULL;
 }
 
@@ -138,7 +143,7 @@ int arg_check(int argc, char **argv)
     return 0;
 }
 
-int elp_msg(elpinfo_t *info, char *input)
+int elp_give_msg(elpinfo_t *info, char *input)
 {
     if (!info || !input)
         return -1;
@@ -146,16 +151,19 @@ int elp_msg(elpinfo_t *info, char *input)
     int len = strlen(input) + 1;
     char *msg = malloc(len);
     strncpy(msg, input, len);
-    llist_addl(&info->queue, msg);
-    write(info->pipefd[1], "1", 1);
 
+    pthread_mutex_lock(&info->mutex);
+    llist_addl(&info->queue, msg);
+    pthread_mutex_unlock(&info->mutex);
+
+    write(info->pipefd[1], "1", 1);
     return 0;
 }
 
 /**
  * todo:
- * - lock queue access
- * - cancel thread with mutex
+ * - release mutex on cleanup
+ * - does pthread_create need to be checked
  */
 int main(int argc, char **argv)
 {
@@ -182,7 +190,7 @@ int main(int argc, char **argv)
             break;
         }
 
-        elp_msg(&info, input);
+        elp_give_msg(&info, input);
     }
 
     printf("Shutting down\n");
