@@ -2,9 +2,9 @@
 
 all: client server
 
-client: client/client.c client/llist.c client/llist.h client/tcpcon.c client/tcpcon.h
+client: client/client.c client/llist.c client/llist.h client/tcpcon.c client/tcpcon.h client/elp.c client/elp.h
 	mkdir -p bin
-	gcc -o bin/client -Wall -pthread -I client client/client.c client/llist.c client/tcpcon.c
+	gcc -o bin/client -Wall -pthread -I client client/client.c client/llist.c client/tcpcon.c client/elp.c
 	@echo "Built client into bin/client"
 
 server: server/server.go

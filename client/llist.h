@@ -14,8 +14,13 @@ struct llist_t {
 };
 
 int llist_init(llist_t *list);
+
 int llist_destroy(llist_t *list);
+
 int llist_addf(llist_t *list, void *data);
+
 int llist_addl(llist_t *list, void *data);
+
 void *llist_remf(llist_t *list);
+
 void *llist_reml(llist_t *list);
