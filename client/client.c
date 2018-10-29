@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
     printf("Shutting down\n");
     stop_thread(elptid);
-    elpinfo_destroy(&info);
+    elpinfo_dtry(&info);
 
     return 0;
 }

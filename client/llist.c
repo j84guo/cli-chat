@@ -9,12 +9,12 @@ int llist_init(llist_t *list)
 
     list->head = NULL;
     list->tail = NULL;
-    list->size = 0; 
+    list->size = 0;
 
     return 0;
 }
 
-int llist_destroy(llist_t *list)
+int llist_dtry(llist_t *list)
 {
     if (!list)
         return -1;
@@ -41,7 +41,7 @@ int llist_addf(llist_t *list, void *data)
     node->data = data;
     node->next = list->head;
     node->prev = NULL;
-    
+
     list->head = node;
     if (++list->size == 1)
         list->tail = node;
@@ -73,10 +73,10 @@ void *llist_remf(llist_t *list)
 {
     if (!list || !list->head)
         return NULL;
-    
+
     lnode_t *node = list->head;
     void *data = node->data;
- 
+
     list->head = node->next;
     free(node);
     if (--list->size == 0)
@@ -89,10 +89,10 @@ void *llist_reml(llist_t *list)
 {
     if (!list || !list->tail)
         return NULL;
-    
+
     lnode_t *node = list->tail;
     void *data = node->data;
- 
+
     list->tail = node->prev;
     free(node);
     if (--list->size == 0)

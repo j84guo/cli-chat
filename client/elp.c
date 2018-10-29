@@ -27,20 +27,20 @@ int elpinfo_init(elpinfo_t *info, char *ip, unsigned short port)
     return 0;
 }
 
-int elpinfo_destroy(elpinfo_t *info)
+int elpinfo_dtry(elpinfo_t *info)
 {
     int ret = 0;
 
-    if (llist_destroy(&info->queue))
+    if (llist_dtry(&info->queue))
         ret = -1;
 
-    if (tcpcon_destroy(&info->con))
+    if (tcpcon_dtry(&info->con))
         ret = -1;
 
-    if (close(info->pipefd[0])) 
+    if (close(info->pipefd[0]))
         ret = -1;
 
-    if (close(info->pipefd[1])) 
+    if (close(info->pipefd[1]))
         ret = -1;
 
     return ret;

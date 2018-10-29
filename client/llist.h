@@ -15,7 +15,7 @@ struct llist_t {
 
 int llist_init(llist_t *list);
 
-int llist_destroy(llist_t *list);
+int llist_dtry(llist_t *list);
 
 int llist_addf(llist_t *list, void *data);
 

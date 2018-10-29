@@ -10,7 +10,7 @@ typedef struct {
 
 int elpinfo_init(elpinfo_t *info, char *ip, unsigned short port);
 
-int elpinfo_destroy(elpinfo_t *info);
+int elpinfo_dtry(elpinfo_t *info);
 
 void *elp_run(void *arg);
 
