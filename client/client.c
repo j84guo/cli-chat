@@ -10,25 +10,74 @@
 #include "tcpcon.h"
 
 typedef struct {
-    int pd;
+    int pipefd[2];
     tcpcon_t con;
-    llist_t *queue;
+    llist_t queue;
 } elpinfo_t;
 
-int loop(int pd, tcpcon_t *con, llist_t *queue)
+int elpinfo_init(elpinfo_t *info, char *ip, unsigned short port);
+int elpinfo_destroy(elpinfo_t *info);
+void *elp_run(void *arg);
+int elp_loop(int pd, tcpcon_t *con, llist_t *queue);
+int elp_msg(elpinfo_t *info, char *input);
+void stop_thread(pthread_t tid);
+int arg_check(int argc, char **argv);
+int fdset_init(fd_set *set, int pd, int sd);
+
+int elpinfo_init(elpinfo_t *info, char *ip, unsigned short port)
 {
-    int ret;
-    char rbuf[512 + 1];
+    if (!info || !ip)
+        return -1;
+
+    llist_init(&info->queue);
+
+    if (pipe(info->pipefd) == -1) {
+        perror("pipe");
+        return -1;
+    }
+
+    if (tcpcon_init(&info->con, ip, port))
+        return -1;
+
+    return 0;
+}
+
+int elpinfo_destroy(elpinfo_t *info)
+{
+    int ret = 0;
+
+    if (llist_destroy(&info->queue))
+        ret = -1;
+
+    if (tcpcon_destroy(&info->con))
+        ret = -1;
+
+    return ret;
+}
+
+int fdset_init(fd_set *set, int pd, int sd)
+{
+    if (!set || pd < 0 || sd < 0)
+        return -1;
+
+    FD_ZERO(set);
+    FD_SET(pd, set);
+    FD_SET(sd, set);
+
+    return 0;
+}
+
+int elp_loop(int pd, tcpcon_t *con, llist_t *queue)
+{
+    int ret, nfds;
+    char rbuf[512 + 1], *msg;
     fd_set readfds;
 
     while (1) {
-        FD_ZERO(&readfds);
-        FD_SET(pd, &readfds);
-        FD_SET(con->fd, &readfds);
+        fdset_init(&readfds, pd, con->fd);
+        nfds = pd >= con->fd ? pd + 1 : con->fd + 1;
+        ret = select(nfds, &readfds, NULL, NULL, NULL);
 
-        ret = select(
-            pd >= con->fd ? pd + 1 : con->fd + 1,
-            &readfds, NULL, NULL, NULL);
         if (ret == -1) {
             if (errno == EINTR)
                 continue;
@@ -40,7 +89,7 @@ int loop(int pd, tcpcon_t *con, llist_t *queue)
         if (FD_ISSET(pd, &readfds)) {
             read(pd, rbuf, 1);
 
-            char *msg = llist_remf(queue);
+            msg = llist_remf(queue);
             sendall(con->fd, msg, strlen(msg));
             free(msg);
         } else {
@@ -63,10 +112,10 @@ int loop(int pd, tcpcon_t *con, llist_t *queue)
     return 0;
 }
 
-void *run_eloop(void *arg)
+void *elp_run(void *arg)
 {
     elpinfo_t *info = (elpinfo_t *) arg;
-    loop(info->pd, &info->con, info->queue);
+    elp_loop(info->pipefd[0], &info->con, &info->queue);
     return NULL;
 }
 
@@ -76,63 +125,69 @@ void stop_thread(pthread_t tid)
     pthread_join(tid, NULL);
 }
 
-/**
- * Todo:
- * - clean up functions
- * - lock queue access
- * - chat protocol
- */
-int main(int argc, char **argv)
+int arg_check(int argc, char **argv)
 {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <ip> <port>\n", argv[0]);
-        return 1;
+        return -1;
     } else if (strlen(argv[1]) > INET6_ADDRSTRLEN) {
-        fprintf(stderr, "Usage: <ip> less then  %d bytes\n", INET6_ADDRSTRLEN);
-        return 1;
+        fprintf(stderr, "Usage: <ip> is over %d bytes\n", INET6_ADDRSTRLEN);
+        return -1;
     }
 
-    struct llist_t queue;
-    llist_init(&queue);
+    return 0;
+}
 
-    int pipefd[2];
-    if (pipe(pipefd) == -1) {
-        perror("pipe");
+int elp_msg(elpinfo_t *info, char *input)
+{
+    if (!info || !input)
+        return -1;
+
+    int len = strlen(input) + 1;
+    char *msg = malloc(len);
+    strncpy(msg, input, len);
+    llist_addl(&info->queue, msg);
+    write(info->pipefd[1], "1", 1);
+
+    return 0;
+}
+
+/**
+ * todo:
+ * - lock queue access
+ * - cancel thread with mutex
+ */
+int main(int argc, char **argv)
+{
+    if (arg_check(argc, argv))
         return 1;
-    }
 
-    printf("Opening connection\n");
-    elpinfo_t einfo;
-    einfo.pd = pipefd[0];
-    einfo.queue = &queue;
-    if (tcpcon_init(&einfo.con, argv[1], atoi(argv[2])))
+    printf("Starting up\n");
+    elpinfo_t info;
+    if (elpinfo_init(&info, argv[1], atoi(argv[2])))
         return 1;
 
-    pthread_t eloop;
-    pthread_create(&eloop, NULL, run_eloop, &einfo);
+    pthread_t elptid;
+    pthread_create(&elptid, NULL, elp_run, &info);
 
-    char input[512], *msg;
-    int len;
+    char input[512];
     while (1) {
         if (!fgets(input, 512, stdin)) {
             if (ferror(stdin)) {
                 perror("fgets");
-                stop_thread(eloop);
+                stop_thread(elptid);
                 return 1;
             }
 
             break;
         }
 
-        len = strlen(input) + 1;
-        msg = malloc(len);
-        strncpy(msg, input, len);
-        llist_addl(&queue, msg);
-        write(pipefd[1], "1", 1);
+        elp_msg(&info, input);
     }
 
-    printf("Closing connection\n");
-    stop_thread(eloop);
-    tcpcon_destroy(&einfo.con);
+    printf("Shutting down\n");
+    stop_thread(elptid);
+    elpinfo_destroy(&info);
+
     return 0;
 }
