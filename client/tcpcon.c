@@ -42,7 +42,7 @@ int tcpcon_dtry(tcpcon_t *con)
 int tcpcon_init(tcpcon_t *con, char *ip, unsigned short port)
 {
     int res = tcpcon_config(con, ip, port);
-    if (res != 0)
+    if (!res)
         return res;
 
     if (connect(con->fd, (struct sockaddr *) &con->addr,
@@ -59,7 +59,7 @@ int sendall(int fd, char *buf, int len)
     int i = 0, n;
 
     while (i < len) {
-        if ((n = send(fd, buf, len, 0)) == -1) {
+        if ((n = send(fd, buf+i, len-i, 0)) == -1) {
             if (errno == EINTR)
                 continue;
 
