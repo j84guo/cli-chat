@@ -61,14 +61,28 @@ int fdset_init(fd_set *set, int pd, int sd)
     return 0;
 }
 
+void elp_cleanup(void *arg)
+{
+    if (!arg)
+        return;
+
+    pthread_mutex_unlock(
+        (pthread_mutex_t *) arg
+    );
+}
+
 void elp_msg_send(elpinfo_t *info)
 {
     char c, *msg;
     read(info->pipefd[0], &c, 1);
 
+    pthread_cleanup_push(elp_cleanup, &info->mutex);
     pthread_mutex_lock(&info->mutex);
+
     msg = llist_remf(&info->queue);
+
     pthread_mutex_unlock(&info->mutex);
+    pthread_cleanup_pop(0);
 
     sendall(info->con.fd, msg, strlen(msg));
     free(msg);

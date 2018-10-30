@@ -41,9 +41,8 @@ int tcpcon_dtry(tcpcon_t *con)
 
 int tcpcon_init(tcpcon_t *con, char *ip, unsigned short port)
 {
-    int res = tcpcon_config(con, ip, port);
-    if (!res)
-        return res;
+    if (tcpcon_config(con, ip, port))
+        return -1;
 
     if (connect(con->fd, (struct sockaddr *) &con->addr,
         sizeof con->addr) == -1) {
