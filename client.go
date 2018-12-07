@@ -33,6 +33,16 @@ func manageConnOut(conn net.Conn, connOutChan chan string) {
 	}
 }
 
+func manageStdin(connOutChan chan string) {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		connOutChan <-scanner.Text()
+	}
+	if e := scanner.Err(); e != nil {
+		panic(e)
+	}
+}
+
 /* Todo: Use a done channel to signal goroutines to end?
    Note: net.Conn is safe to use by concurrent goroutines */
 func main() {
@@ -46,12 +56,5 @@ func main() {
 
 	go manageConnIn(conn)
 	go manageConnOut(conn, connOutChan)
-
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		connOutChan <-scanner.Text()
-	}
-	if e := scanner.Err(); e != nil {
-		panic(e)
-	}
+	manageStdin(connOutChan)
 }
