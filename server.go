@@ -54,6 +54,7 @@ func acceptForever(server net.Listener, accepted *chan net.Conn) {
 			os.Exit(1)
 		}
 
+		fmt.Println("Accepted:", con)
 		*accepted <-con
 	}
 }
@@ -72,7 +73,7 @@ func loopOne(state *ChatState) {
 		case msg := <-state.messages:
 			handleMsg(msg, state)
 
-		// todo: does this need to be synchronized
+		/* todo: does this need to be synchronized */
 		case id := <-state.terminated:
 			delete(state.clients, id)
 	}
@@ -88,7 +89,6 @@ func handleClient(con net.Conn, id int, state *ChatState) {
 		if e != nil {
 			break
 		}
-
 		state.messages <-newChatMsg(data, id)
 	}
 
