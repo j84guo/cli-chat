@@ -35,7 +35,6 @@ int tcpcon_dtry(tcpcon_t *con)
 {
     if (!con)
         return -1;
-
     return close(con->fd);
 }
 
@@ -45,7 +44,7 @@ int tcpcon_init(tcpcon_t *con, char *ip, unsigned short port)
         return -1;
 
     if (connect(con->fd, (struct sockaddr *) &con->addr,
-        sizeof con->addr) == -1) {
+		sizeof con->addr) == -1) {
         perror("connect");
         return -1;
     }
@@ -61,10 +60,8 @@ int sendall(int fd, char *buf, int len)
         if ((n = send(fd, buf+i, len-i, 0)) == -1) {
             if (errno == EINTR)
                 continue;
-
             return -1;
         }
-
         i += n;
     }
 

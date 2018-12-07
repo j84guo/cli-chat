@@ -33,16 +33,12 @@ int elpinfo_dtry(elpinfo_t *info)
 
     if (llist_dtry(&info->queue))
         ret = -1;
-
     if (tcpcon_dtry(&info->con))
         ret = -1;
-
     if (close(info->pipefd[0]))
         ret = -1;
-
     if (close(info->pipefd[1]))
         ret = -1;
-
     if (pthread_mutex_destroy(&info->mutex))
         ret = -1;
 
@@ -63,27 +59,20 @@ int fdset_init(fd_set *set, int pd, int sd)
 
 void elp_cleanup(void *arg)
 {
-    if (!arg)
-        return;
-
-    pthread_mutex_unlock(
-        (pthread_mutex_t *) arg
-    );
+    pthread_mutex_unlock(arg);
 }
 
 void elp_msg_send(elpinfo_t *info)
 {
     char c, *msg;
     read(info->pipefd[0], &c, 1);
-
     pthread_cleanup_push(elp_cleanup, &info->mutex);
     pthread_mutex_lock(&info->mutex);
 
+	/* critical section */
     msg = llist_remf(&info->queue);
 
-    pthread_mutex_unlock(&info->mutex);
-    pthread_cleanup_pop(0);
-
+    pthread_cleanup_pop(1);
     sendall(info->con.fd, msg, strlen(msg));
     free(msg);
 }
