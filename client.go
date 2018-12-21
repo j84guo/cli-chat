@@ -33,10 +33,7 @@ func manageStdin(connOutChan chan string) {
 	for Stdin.Scan() {
 		connOutChan <-Stdin.Text()
 	}
-	e := Stdin.Err()
-	if e == io.EOF {
-		fmt.Println("EOF detected")
-	} else {
+	if e := Stdin.Err(); e != nil && e != io.EOF {
 		CheckError(e)
 	}
 }

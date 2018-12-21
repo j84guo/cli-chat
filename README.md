@@ -17,5 +17,6 @@ A command line chat tool based on Git concepts.
 Prompt user to signup if no local config found, else prompt to set config, read
 name from stdin and save to file.
 
-2.
+2. Groups
+3. Network Protocol to Indicate Message Sender
 
