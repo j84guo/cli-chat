@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"os"
 	"fmt"
 	"net"
 	"bufio"
@@ -31,11 +30,10 @@ func manageConnOut(conn net.Conn, connOutChan chan string) {
 }
 
 func manageStdin(connOutChan chan string) {
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		connOutChan <-scanner.Text()
+	for Stdin.Scan() {
+		connOutChan <-Stdin.Text()
 	}
-	e := scanner.Err()
+	e := Stdin.Err()
 	if e == io.EOF {
 		fmt.Println("EOF detected")
 	} else {

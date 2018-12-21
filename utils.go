@@ -1,10 +1,13 @@
 package main
 
 import (
+	"io"
 	"os"
 	"fmt"
-	"strings"
+	"bufio"
 )
+
+var Stdin = bufio.NewScanner(os.Stdin)
 
 func FatalError(prefix string, e error) {
 	fmt.Fprintf(os.Stderr, "%s: %s\n", prefix, e.Error())
@@ -18,15 +21,16 @@ func CheckError(e error) {
 }
 
 func PromptUsername() (string, error) {
-	return PromptLine("new username:\n")
+	return PromptLine("New username:\n")
 }
 
 func PromptLine(msg string) (string, error) {
-	var line string
 	fmt.Print(msg)
-	if _, e := fmt.Scanln(&line); e != nil {
+	if !Stdin.Scan() {
+		return "", io.EOF
+	}
+	if e := Stdin.Err(); e != nil {
 		return "", e
 	}
-	fmt.Println(line)
-	return strings.TrimRight(line, "\r\n"), nil
+	return Stdin.Text(), nil
 }
