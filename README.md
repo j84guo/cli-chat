@@ -13,8 +13,9 @@ A command line chat tool based on Git concepts.
 	- enter private rooms with ssh key
 
 ### Phases
-
 1. Local Config
-Prompt user to signup if no local config found, else prompt to update or use
-current config. If signup, read name from stdin and save to file.
+Prompt user to signup if no local config found, else prompt to set config, read
+name from stdin and save to file.
+
+2.
 
