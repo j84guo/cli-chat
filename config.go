@@ -29,7 +29,7 @@ func PromptConfig(configPath string) (*Config, error) {
 	var config Config
 	config.path = configPath
 
-	username, e := AskUsername()
+	username, e := PromptUsername()
 	if e == nil {
 		e = ioutil.WriteFile(configPath, []byte(username), 0644)
 	}

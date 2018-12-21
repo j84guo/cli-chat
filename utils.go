@@ -17,7 +17,7 @@ func CheckError(e error) {
 	}
 }
 
-func AskUsername() (string, error) {
+func PromptUsername() (string, error) {
 	return PromptLine("new username:\n")
 }
 
