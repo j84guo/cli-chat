@@ -50,7 +50,7 @@ func acceptForever(server net.Listener, accepted *chan net.Conn) {
 	for {
 		con, e := server.Accept()
 		if e != nil {
-			FatalError(e.Error())
+			FatalError("net.Listener.Accept", e)
 		}
 
 		fmt.Println("Accepted:", con.RemoteAddr())
@@ -117,7 +117,7 @@ func main() {
 
 	server, e := net.Listen(CONN_TYPE, CONN_ADDR)
 	if e != nil {
-		FatalError(e.Error())
+		FatalError("net.Listen", e)
 	}
 
 	go acceptForever(server, &state.accepted)

@@ -47,7 +47,11 @@ func manageStdin(connOutChan chan string) {
    Note: net.Conn is safe to use by concurrent goroutines */
 func main() {
 	config, e := LoadOrPromptConfig()
-	CheckError(e)
+	if e == io.EOF {
+		return
+	} else if e != nil {
+		FatalError("LoadOrPromptConfig", e)
+	}
 	fmt.Println(config)
 
 	connOutChan := make(chan string)

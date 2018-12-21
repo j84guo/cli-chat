@@ -34,13 +34,14 @@ func PromptConfig(configPath string) (*Config, error) {
 
 	username, e := PromptUsername()
 	if e == nil {
-		e = ioutil.WriteFile(configPath, []byte(username), 0644)
+		config.Username = username
+		buf, _ := json.Marshal(config)
+		e = ioutil.WriteFile(configPath, buf, 0644)
 	}
+
 	if e != nil{
 		return nil, e
 	}
-
-	config.Username = username
 	return &config, nil
 }
 

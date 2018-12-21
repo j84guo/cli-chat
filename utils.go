@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func FatalError(msg string) {
-	fmt.Fprintf(os.Stderr, msg + "\n")
+func FatalError(prefix string, e error) {
+	fmt.Fprintf(os.Stderr, "%s: %s\n", prefix, e.Error())
 	os.Exit(1)
 }
 
@@ -27,5 +27,6 @@ func PromptLine(msg string) (string, error) {
 	if _, e := fmt.Scanln(&line); e != nil {
 		return "", e
 	}
+	fmt.Println(line)
 	return strings.TrimRight(line, "\r\n"), nil
 }
