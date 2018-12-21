@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"fmt"
 	"net"
@@ -12,9 +13,7 @@ func manageConnIn(conn net.Conn) {
 	for scanner.Scan() {
 		fmt.Println("Received:", scanner.Text())
 	}
-	if e := scanner.Err(); e != nil {
-		panic(e)
-	}
+	CheckError(scanner.Err())
 }
 
 func manageConnOut(conn net.Conn, connOutChan chan string) {
@@ -27,9 +26,7 @@ func manageConnOut(conn net.Conn, connOutChan chan string) {
            API, where write() and send() returning a partial write is not
            considered an error. */
 		_, e := conn.Write([]byte(userMsg + "\n"))
-		if e != nil {
-			panic(e)
-		}
+		CheckError(e)
 	}
 }
 
@@ -38,20 +35,24 @@ func manageStdin(connOutChan chan string) {
 	for scanner.Scan() {
 		connOutChan <-scanner.Text()
 	}
-	if e := scanner.Err(); e != nil {
-		panic(e)
+	e := scanner.Err()
+	if e == io.EOF {
+		fmt.Println("EOF detected")
+	} else {
+		CheckError(e)
 	}
 }
 
 /* Todo: Use a done channel to signal goroutines to end?
    Note: net.Conn is safe to use by concurrent goroutines */
 func main() {
-	connOutChan := make(chan string)
+	config, e := GetConfig()
+	CheckError(e)
+	fmt.Println(config)
 
+	connOutChan := make(chan string)
 	conn, e := net.Dial("tcp", "127.0.0.1:8888")
-	if e != nil {
-		panic(e)
-	}
+	CheckError(e)
 	defer conn.Close()
 
 	go manageConnIn(conn)

@@ -3,20 +3,27 @@ package main
 import (
 	"fmt"
 	"net"
-	"os"
 	"bufio"
 )
 
 const (
-	TYPE string = "tcp"
-	ADDR string = "0.0.0.0:8888"
+	CONN_TYPE string = "tcp"
+	CONN_ADDR string = "0.0.0.0:8888"
 )
 
+/** sender ID and message */
 type ChatMsg struct {
 	text string
 	sender int
 }
 
+/**
+ * next - next ID
+ * messages - channel for incoming messages
+ * accepted - channel for accepted clients
+ * terminated - channel for disconnected clients
+ * clients - map of ID to net.Conn
+ */
 type ChatState struct {
 	next int
 	messages chan *ChatMsg
@@ -27,34 +34,26 @@ type ChatState struct {
 
 func newChatState() *ChatState {
 	var state ChatState
-
 	state.next = 0
 	state.messages = make(chan *ChatMsg)
 	state.accepted = make(chan net.Conn)
 	state.terminated = make(chan int)
 	state.clients = make(map[int]net.Conn)
-
 	return &state
 }
 
 func newChatMsg(text string, id int) *ChatMsg {
-	var msg ChatMsg
-
-	msg.text = text
-	msg.sender = id
-
-	return &msg
+	return &ChatMsg{text: text, sender: id}
 }
 
 func acceptForever(server net.Listener, accepted *chan net.Conn) {
 	for {
 		con, e := server.Accept()
 		if e != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", e.Error())
-			os.Exit(1)
+			FatalError(e.Error())
 		}
 
-		fmt.Println("Accepted:", con)
+		fmt.Println("Accepted:", con.RemoteAddr())
 		*accepted <-con
 	}
 }
@@ -73,7 +72,7 @@ func loopOne(state *ChatState) {
 		case msg := <-state.messages:
 			handleMsg(msg, state)
 
-		/* todo: does this need to be synchronized */
+		/* TODO: does this need to be synchronized */
 		case id := <-state.terminated:
 			delete(state.clients, id)
 	}
@@ -114,12 +113,11 @@ func relayMsg(con net.Conn, id int, text string, state *ChatState) {
 }
 
 func main() {
-	var state *ChatState = newChatState()
+	state := newChatState()
 
-	server, e := net.Listen(TYPE, ADDR)
+	server, e := net.Listen(CONN_TYPE, CONN_ADDR)
 	if e != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", e.Error())
-		os.Exit(1)
+		FatalError(e.Error())
 	}
 
 	go acceptForever(server, &state.accepted)
