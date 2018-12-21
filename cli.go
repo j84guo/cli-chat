@@ -70,7 +70,7 @@ func GetConfig() (*Config, error) {
 		config, e = makeConfig()
 	}
 	if e != nil {
-		return nil, nil
+		return nil, e
 	}
 	return config, nil
 }
