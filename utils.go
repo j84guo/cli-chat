@@ -26,9 +26,7 @@ func PromptUsername() (string, error) {
 
 func PromptLine(msg string) (string, error) {
 	fmt.Print(msg)
-	if !Stdin.Scan() {
-		return "", io.EOF
-	}
+	Stdin.Scan()
 	if e := Stdin.Err(); e != nil {
 		return "", e
 	}
