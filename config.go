@@ -54,7 +54,7 @@ func LoadOrPromptConfig() (*Config, error) {
 		config, e = PromptConfig(configPath)
 	}
 	if e != nil {
-		return nil, nil
+		return nil, e
 	}
 
 	return config, nil
