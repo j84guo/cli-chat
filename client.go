@@ -46,7 +46,7 @@ func manageStdin(connOutChan chan string) {
 /* Todo: Use a done channel to signal goroutines to end?
    Note: net.Conn is safe to use by concurrent goroutines */
 func main() {
-	config, e := GetConfig()
+	config, e := LoadOrPromptConfig()
 	CheckError(e)
 	fmt.Println(config)
 
