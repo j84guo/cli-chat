@@ -7,7 +7,7 @@ import (
 	"bufio"
 )
 
-var Stdin = bufio.NewScanner(os.Stdin)
+var Stdin *bufio.Scanner = bufio.NewScanner(os.Stdin)
 
 func FatalError(prefix string, e error) {
 	fmt.Fprintf(os.Stderr, "%s: %s\n", prefix, e.Error())
