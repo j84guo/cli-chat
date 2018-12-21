@@ -22,9 +22,9 @@ func manageConnOut(conn net.Conn, connOutChan chan string) {
 		fmt.Println("Sending:", userMsg)
 
 		/* Here we've ignored partial writes, as error will be reported in that
-           case anyways. This is in contrast with the Unix standard and socket
-           API, where write() and send() returning a partial write is not
-           considered an error. */
+		   case anyways. This is in contrast with the Unix standard and socket
+		   API, where write() and send() returning a partial write is not
+		   considered an error. */
 		_, e := conn.Write([]byte(userMsg + "\n"))
 		CheckError(e)
 	}
