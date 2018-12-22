@@ -69,7 +69,7 @@ func NewFrame() *Frame {
 }
 
 func NewClient(addrStr string) (*Client, error) {
-	tcpConn := net.Dial("tcp", addrStr)
+	conn, e := net.Dial("tcp", addrStr)
 	if e != nil {
 		return nil, e
 	}
