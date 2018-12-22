@@ -69,20 +69,14 @@ func NewFrame() *Frame {
 }
 
 func NewClient(addrStr string) (*Client, error) {
-	tcpClient, e := net.Dial("tcp", addrStr)
+	tcpConn := net.Dial("tcp", addrStr)
 	if e != nil {
 		return nil, e
 	}
-	return Wrap(tcpClient), nil
-}
 
-func Wrap(conn net.Conn) (*Client) {
-	if conn == nil {
-		panic("Wrap: expected non-nil")
-	}
 	in := bufio.NewReader(conn)
 	out := bufio.NewWriter(conn)
-	return &Client{conn, in, out}
+	return &Client{conn, in, out}, nil
 }
 
 func (chat *Client) ReadFrame() (*Frame, error) {
