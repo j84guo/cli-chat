@@ -73,10 +73,10 @@ func Dial(addrStr string) (*Conn, error) {
 	if e != nil {
 		return nil, e
 	}
-	return wrap(tcpConn), nil
+	return Wrap(tcpConn), nil
 }
 
-func wrap(conn net.Conn) (*Conn) {
+func Wrap(conn net.Conn) (*Conn) {
 	if conn == nil {
 		panic("cmp.wrap: expected non-nil")
 	}
