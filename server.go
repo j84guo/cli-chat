@@ -99,14 +99,12 @@ func handleMsg(msg *ChatMsg, state *ChatState) {
 		if id == msg.sender {
 			continue
 		}
-
 		go relayMsg(con, id, msg.text, state)
 	}
 }
 
 func relayMsg(con net.Conn, id int, text string, state *ChatState) {
 	_, e := con.Write([]byte(text))
-
 	if e != nil {
 		state.terminated <-id
 	}
