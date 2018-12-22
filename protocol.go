@@ -73,12 +73,12 @@ func Dial(addrStr string) (*Conn, error) {
 	if e != nil {
 		return nil, e
 	}
-	return wrap(tcpConn), nil
+	return Wrap(tcpConn), nil
 }
 
-func wrap(conn net.Conn) (*Conn) {
+func Wrap(conn net.Conn) (*Conn) {
 	if conn == nil {
-		panic("cmp.wrap: expected non-nil")
+		panic("Wrap: expected non-nil")
 	}
 	in := bufio.NewReader(conn)
 	out := bufio.NewWriter(conn)
@@ -102,7 +102,6 @@ func (chat *Conn) ReadFrame() (*Frame, error) {
 			break
 		}
 	}
-
 	if _, ok := f.Head[BODY_LEN]; ok {
 		if e := chat.readBody(f); e != nil {
 			return nil, e
@@ -148,6 +147,12 @@ func (chat *Conn) readBody(f *Frame) error {
 	return e
 }
 
+/*
+func (chat *Conn) SendMsg() error {
+	return chat.WriteFrame()
+}
+*/
+
 /**
  * Simple blocking send
  *
@@ -156,7 +161,7 @@ func (chat *Conn) readBody(f *Frame) error {
  * Message type (text vs binary)
  * Cleanup delimiters
  */
-func (chat *Conn) WriteFrame(f *Frame) (error) {
+func (chat *Conn) WriteFrame(f *Frame) error {
 	if e := chat.writeType(f.Type); e != nil {
 		return e
 	}
