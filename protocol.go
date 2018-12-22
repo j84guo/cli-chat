@@ -56,9 +56,9 @@ type Frame struct {
 
 /**
  * Todo:
- * Connection re-connect, keep-alive (i.e. MQTT)
+ * Clientection re-connect, keep-alive (i.e. MQTT)
  */
-type Conn struct {
+type Client struct {
 	conn net.Conn
 	in *bufio.Reader
 	out *bufio.Writer
@@ -68,24 +68,24 @@ func NewFrame() *Frame {
 	return &Frame{"", make(map[string]string), nil}
 }
 
-func Dial(addrStr string) (*Conn, error) {
-	tcpConn, e := net.Dial("tcp", addrStr)
+func Dial(addrStr string) (*Client, error) {
+	tcpClient, e := net.Dial("tcp", addrStr)
 	if e != nil {
 		return nil, e
 	}
-	return Wrap(tcpConn), nil
+	return Wrap(tcpClient), nil
 }
 
-func Wrap(conn net.Conn) (*Conn) {
+func Wrap(conn net.Conn) (*Client) {
 	if conn == nil {
 		panic("Wrap: expected non-nil")
 	}
 	in := bufio.NewReader(conn)
 	out := bufio.NewWriter(conn)
-	return &Conn{conn, in, out}
+	return &Client{conn, in, out}
 }
 
-func (chat *Conn) ReadFrame() (*Frame, error) {
+func (chat *Client) ReadFrame() (*Frame, error) {
 	f := NewFrame()
 
 	ftype, e := chat.in.ReadString(NEWLN)
@@ -111,7 +111,7 @@ func (chat *Conn) ReadFrame() (*Frame, error) {
 	return f, nil
 }
 
-func (chat *Conn) readHeader(f *Frame) (bool, error) {
+func (chat *Client) readHeader(f *Frame) (bool, error) {
 	hstr, e := chat.in.ReadString(NEWLN)
 	if e != nil {
 		return false, e
@@ -131,7 +131,7 @@ func (chat *Conn) readHeader(f *Frame) (bool, error) {
 	return true, nil
 }
 
-func (chat *Conn) readBody(f *Frame) error {
+func (chat *Client) readBody(f *Frame) error {
 	blenStr, ok := f.Head[BODY_LEN]
 	if !ok {
 		return errors.New("Bad frame: Body-Len")
@@ -148,7 +148,7 @@ func (chat *Conn) readBody(f *Frame) error {
 }
 
 /*
-func (chat *Conn) SendMsg() error {
+func (chat *Client) SendMsg() error {
 	return chat.WriteFrame()
 }
 */
@@ -161,7 +161,7 @@ func (chat *Conn) SendMsg() error {
  * Message type (text vs binary)
  * Cleanup delimiters
  */
-func (chat *Conn) WriteFrame(f *Frame) error {
+func (chat *Client) WriteFrame(f *Frame) error {
 	if e := chat.writeType(f.Type); e != nil {
 		return e
 	}
@@ -188,14 +188,14 @@ func (chat *Conn) WriteFrame(f *Frame) error {
 	return e
 }
 
-func (chat *Conn) writeType(ftype string) error {
+func (chat *Client) writeType(ftype string) error {
 	buf := []byte(ftype)
 	buf = append(buf, NEWLN)
 	_, e := chat.out.Write(buf)
 	return e
 }
 
-func (chat *Conn) writeHeader(hkey, hval string) error {
+func (chat *Client) writeHeader(hkey, hval string) error {
 	buf := []byte(hkey)
 	buf = append(buf, KVDLM)
 	buf = append(buf, hval...)
@@ -220,12 +220,12 @@ func main() {
 
 	e = conn.WriteFrame(frame)
 	if e != nil {
-		FatalError("Conn.WriteFrame", e)
+		FatalError("Client.WriteFrame", e)
 	}
 
 	resp, e := conn.ReadFrame()
 	if e != nil {
-		FatalError("Conn.ReadFrame", e)
+		FatalError("Client.ReadFrame", e)
 	}
 	fmt.Println(resp)
 }
