@@ -13,6 +13,9 @@ const (
 	/**
 	 * Frame Types
 	 * 
+	 * Users must register a username with the server, which will check for
+	 * any name conflicts.
+	 *
 	 * By default the client will first ask the server to LIST available rooms
 	 * on startup (assume public for now). The user may JOIN an existing room
 	 * or CREATE one. After the user is done, he/she may LEAVE.
@@ -26,6 +29,8 @@ const (
 	 * based on which room is checked out. Messages for background rooms should
 	 * be saved locally until later checkout.
 	 */
+	CHECK_USERNAME string = "CHECK_USERNAME"
+
 	JOIN_ROOM string = "JOIN_ROOM"
 	LEAVE_ROOM string = "LEAVE_ROOM"
 	LIST_ROOMS string = "LIST_ROOMS"
