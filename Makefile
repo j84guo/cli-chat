@@ -1,6 +1,6 @@
 chat:
-	go build -o bin/server server.go utils.go
-	go build -o bin/client client.go utils.go config.go
+	go build -o bin/server cmd/server.go
+	go build -o bin/client cmd/client.go
 
 clean:
 	rm -rf bin

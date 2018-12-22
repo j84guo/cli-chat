@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"io/ioutil"
 	"encoding/json"
+	"cli-chat/pkg/utils"
 )
 
 type Config struct {
@@ -32,7 +33,7 @@ func PromptConfig(configPath string) (*Config, error) {
 	var config Config
 	config.Path = configPath
 
-	username, e := PromptUsername()
+	username, e := utils.PromptUsername()
 	if e != nil {
 		return nil, e
 	}
