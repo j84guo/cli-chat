@@ -45,7 +45,7 @@ const (
 /**
  * Chat Message Protocol
  *
- * Full-duplex application layer protocol, consisting of lightweight frames.
+ * Full-duplex application layer protocol, consisting of lightweight frames
  * (Hello WebSockets)
  */
 type Frame struct {
@@ -178,11 +178,9 @@ func (chat *Conn) WriteFrame(f *Frame) (error) {
 	if _, e := chat.out.Write(f.Body); e != nil {
 		return e
 	}
-	if e := chat.out.Flush(); e != nil {
-		return e
-	}
 
-	return nil
+	e := chat.out.Flush()
+	return e
 }
 
 func (chat *Conn) WriteType(ftype string) error {
