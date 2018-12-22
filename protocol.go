@@ -73,10 +73,10 @@ func Dial(addrStr string) (*Conn, error) {
 	if e != nil {
 		return nil, e
 	}
-	return Wrap(tcpConn), nil
+	return wrap(tcpConn), nil
 }
 
-func Wrap(conn net.Conn) (*Conn) {
+func wrap(conn net.Conn) (*Conn) {
 	if conn == nil {
 		panic("cmp.wrap: expected non-nil")
 	}
@@ -95,7 +95,7 @@ func (chat *Conn) ReadFrame() (*Frame, error) {
 	f.Type = ftype[:len(ftype) - 1]
 
 	for {
-		cont, e := chat.ReadHeader(f)
+		cont, e := chat.readHeader(f)
 		if e != nil {
 			return nil, e
 		} else if !cont {
@@ -104,7 +104,7 @@ func (chat *Conn) ReadFrame() (*Frame, error) {
 	}
 
 	if _, ok := f.Head[BODY_LEN]; ok {
-		if e := chat.ReadBody(f); e != nil {
+		if e := chat.readBody(f); e != nil {
 			return nil, e
 		}
 	}
@@ -112,7 +112,7 @@ func (chat *Conn) ReadFrame() (*Frame, error) {
 	return f, nil
 }
 
-func (chat *Conn) ReadHeader(f *Frame) (bool, error) {
+func (chat *Conn) readHeader(f *Frame) (bool, error) {
 	hstr, e := chat.in.ReadString(NEWLN)
 	if e != nil {
 		return false, e
@@ -132,7 +132,7 @@ func (chat *Conn) ReadHeader(f *Frame) (bool, error) {
 	return true, nil
 }
 
-func (chat *Conn) ReadBody(f *Frame) error {
+func (chat *Conn) readBody(f *Frame) error {
 	blenStr, ok := f.Head[BODY_LEN]
 	if !ok {
 		return errors.New("Bad frame: Body-Len")
@@ -157,17 +157,17 @@ func (chat *Conn) ReadBody(f *Frame) error {
  * Cleanup delimiters
  */
 func (chat *Conn) WriteFrame(f *Frame) (error) {
-	if e := chat.WriteType(f.Type); e != nil {
+	if e := chat.writeType(f.Type); e != nil {
 		return e
 	}
 
 	for hkey, hval := range f.Head {
-		if e := chat.WriteHeader(hkey, hval); e != nil {
+		if e := chat.writeHeader(hkey, hval); e != nil {
 			return nil
 		}
 	}
 	if _, ok := f.Head[BODY_LEN]; !ok && len(f.Body) > 0 {
-		if e := chat.WriteHeader(BODY_LEN, strconv.Itoa(len(f.Body))); e != nil {
+		if e := chat.writeHeader(BODY_LEN, strconv.Itoa(len(f.Body))); e != nil {
 			return nil
 		}
 	}
@@ -183,14 +183,14 @@ func (chat *Conn) WriteFrame(f *Frame) (error) {
 	return e
 }
 
-func (chat *Conn) WriteType(ftype string) error {
+func (chat *Conn) writeType(ftype string) error {
 	buf := []byte(ftype)
 	buf = append(buf, NEWLN)
 	_, e := chat.out.Write(buf)
 	return e
 }
 
-func (chat *Conn) WriteHeader(hkey, hval string) error {
+func (chat *Conn) writeHeader(hkey, hval string) error {
 	buf := []byte(hkey)
 	buf = append(buf, KVDLM)
 	buf = append(buf, hval...)
