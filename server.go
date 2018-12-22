@@ -46,7 +46,7 @@ func newChatMsg(text string, id int) *ChatMsg {
 	return &ChatMsg{text: text, sender: id}
 }
 
-func acceptForever(server net.Listener, accepted *chan net.Conn) {
+func acceptForever(server net.Listener, accepted chan net.Conn) {
 	for {
 		con, e := server.Accept()
 		if e != nil {
@@ -54,7 +54,7 @@ func acceptForever(server net.Listener, accepted *chan net.Conn) {
 		}
 
 		fmt.Println("Accepted:", con.RemoteAddr())
-		*accepted <-con
+		accepted <-con
 	}
 }
 
@@ -120,6 +120,6 @@ func main() {
 		FatalError("net.Listen", e)
 	}
 
-	go acceptForever(server, &state.accepted)
+	go acceptForever(server, state.accepted)
 	loopForever(state)
 }
