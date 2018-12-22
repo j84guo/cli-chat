@@ -68,7 +68,7 @@ func NewFrame() *Frame {
 	return &Frame{"", make(map[string]string), nil}
 }
 
-func Dial(addrStr string) (*Client, error) {
+func NewClient(addrStr string) (*Client, error) {
 	tcpClient, e := net.Dial("tcp", addrStr)
 	if e != nil {
 		return nil, e
@@ -205,7 +205,7 @@ func (chat *Client) writeHeader(hkey, hval string) error {
 }
 
 func main() {
-	conn, e := Dial("localhost:8000")
+	conn, e := NewClient("localhost:8000")
 	if e != nil {
 		FatalError("Dial", e)
 	}
