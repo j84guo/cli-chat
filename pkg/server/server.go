@@ -80,7 +80,7 @@ func relayMessage(msg *ClientMessage) {
 	}
 }
 
-/** todo: R/W lock */
+/** Todo: R/W lock */
 func cleanupClient(username string) {
 	delete(active, username)
 }
@@ -108,10 +108,10 @@ func registerClient(conn *chatmp.Conn) (string, error) {
 
 /**
  * Goroutine for:
- * - accepting clients
- * - handling clients
- * - selecting on channels for terminated and accepted connections
- * - reading from new messages and relaying them
+ * Accepting clients
+ * Handling clients
+ * Selecting on channels for terminated and accepted connections
+ * Reading from new messages and relaying them
  */
 func Run() {
 	listener, e := net.Listen("tcp", "0.0.0.0:8000")
